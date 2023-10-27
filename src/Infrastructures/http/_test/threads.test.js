@@ -1,14 +1,47 @@
 const pool = require('../../database/postgres/pool');
+
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const AuthenticationsTableTestHelper = require('../../../../tests/AuthenticationsTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
 const CommentsTableTestHelper = require('../../../../tests/CommentsTestTableTestHelper');
+
 const container = require('../../container');
 const createServer = require('../createServer');
 
 describe('/threads endpoint', () => {
-  afterAll(async () => {
-    await pool.end();
+  let accessToken;
+  let server;
+
+  beforeEach(async () => {
+    const addUserPayload = {
+      username: 'dicoding',
+      password: 'secret',
+      fullname: 'Dicoding Indonesia',
+    };
+
+    const userLoginPayload = {
+      username: 'dicoding',
+      password: 'secret',
+    };
+
+    server = await createServer(container);
+
+    /** add user */
+    await server.inject({
+      method: 'POST',
+      url: '/users',
+      payload: addUserPayload,
+    });
+
+    /** user login */
+    const responseLogin = await server.inject({
+      method: 'POST',
+      url: '/authentications',
+      payload: userLoginPayload,
+    });
+
+    const { data: { accessToken: token } } = JSON.parse(responseLogin.payload);
+    accessToken = token;
   });
 
   afterEach(async () => {
@@ -16,6 +49,10 @@ describe('/threads endpoint', () => {
     await AuthenticationsTableTestHelper.cleanTable();
     await ThreadsTableTestHelper.cleanTable();
     await CommentsTableTestHelper.cleanTable();
+  });
+
+  afterAll(async () => {
+    await pool.end();
   });
 
   describe('when POST /threads', () => {
@@ -26,33 +63,11 @@ describe('/threads endpoint', () => {
         body: 'sebuah body thread',
       };
 
-      const server = await createServer(container);
-
-      await server.inject({
-        method: 'POST',
-        url: '/users',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-          fullname: 'Dicoding Indonesia',
-        },
-      });
-
-      const requestAuth = await server.inject({
-        method: 'POST',
-        url: '/authentications',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-        },
-      });
-      const responseAuth = JSON.parse(requestAuth.payload);
-
       // action
       const response = await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         url: '/threads',
         payload: requestPayload,
@@ -62,6 +77,7 @@ describe('/threads endpoint', () => {
       const responseJson = JSON.parse(response.payload);
       expect(response.statusCode).toEqual(201);
       expect(responseJson.status).toEqual('success');
+
       expect(responseJson.data.addedThread).toBeDefined();
       expect(responseJson.data.addedThread.id).toBeDefined();
       expect(responseJson.data.addedThread.title).toBeDefined();
@@ -74,8 +90,6 @@ describe('/threads endpoint', () => {
         title: 'sebuah thread',
         body: 'sebuah body thread',
       };
-
-      const server = await createServer(container);
 
       // action
       const response = await server.inject({
@@ -98,33 +112,11 @@ describe('/threads endpoint', () => {
         body: '',
       };
 
-      const server = await createServer(container);
-
-      await server.inject({
-        method: 'POST',
-        url: '/users',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-          fullname: 'Dicoding Indonesia',
-        },
-      });
-
-      const requestAuth = await server.inject({
-        method: 'POST',
-        url: '/authentications',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-        },
-      });
-      const responseAuth = JSON.parse(requestAuth.payload);
-
       // action
       const response = await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         url: '/threads',
         payload: requestPayload,
@@ -144,33 +136,11 @@ describe('/threads endpoint', () => {
         body: true,
       };
 
-      const server = await createServer(container);
-
-      await server.inject({
-        method: 'POST',
-        url: '/users',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-          fullname: 'Dicoding Indonesia',
-        },
-      });
-
-      const requestAuth = await server.inject({
-        method: 'POST',
-        url: '/authentications',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-        },
-      });
-      const responseAuth = JSON.parse(requestAuth.payload);
-
       // action
       const response = await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         url: '/threads',
         payload: requestPayload,
@@ -187,51 +157,36 @@ describe('/threads endpoint', () => {
   describe('when GET /threads/{threadId}', () => {
     it('should response 200 and persisted thread', async () => {
       // arrange
-      const server = await createServer(container);
+      const addThreadPayload = {
+        title: 'sebuah thread',
+        body: 'sebuah body thread',
+      };
 
-      await server.inject({
-        method: 'POST',
-        url: '/users',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-          fullname: 'Dicoding Indonesia',
-        },
-      });
+      const addCommentPayload = {
+        content: 'sebuah comment',
+      };
 
-      const requestAuth = await server.inject({
-        method: 'POST',
-        url: '/authentications',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-        },
-      });
-      const responseAuth = JSON.parse(requestAuth.payload);
-
-      const thread = await server.inject({
+      /** create thread */
+      const addedThread = await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         url: '/threads',
-        payload: {
-          title: 'sebuah thread',
-          body: 'sebuah body thread',
-        },
+        payload: addThreadPayload,
       });
-      const threadId = JSON.parse(thread.payload).data.addedThread.id;
+      const { data: { addedThread: { id: addedThreadId } } } = JSON.parse(addedThread.payload);
+      const threadId = addedThreadId;
 
+      /** create comment on added thread */
       await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         url: `/threads/${threadId}/comments`,
-        payload: { content: 'sebuah comment' },
+        payload: addCommentPayload,
       });
-
-      // masalahnya, kembalian comment masih berupa object
 
       // action
       const response = await server.inject({
@@ -242,103 +197,94 @@ describe('/threads endpoint', () => {
       // assert
       const responseJson = JSON.parse(response.payload);
       expect(response.statusCode).toEqual(200);
+
       expect(responseJson.status).toEqual('success');
       expect(responseJson.data.thread).toBeDefined();
       expect(responseJson.data.thread.id).toBeDefined();
+      expect(responseJson.data.thread.title).toBeDefined();
+      expect(responseJson.data.thread.body).toBeDefined();
+      expect(responseJson.data.thread.date).toBeDefined();
+      expect(responseJson.data.thread.username).toBeDefined();
+
+      expect(responseJson.data.thread.comments).toBeDefined();
       expect(responseJson.data.thread.comments[0]).toBeDefined();
     });
 
     it('should response 200 and return deleted comment correctly', async () => {
       // arrange
-      const server = await createServer(container);
+      const addThreadPayload = {
+        title: 'sebuah thread',
+        body: 'sebuah body thread',
+      };
 
-      await server.inject({
-        method: 'POST',
-        url: '/users',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-          fullname: 'Dicoding Indonesia',
-        },
-      });
+      const addCommentAPayload = {
+        content: 'sebuah comment',
+      };
 
-      const requestAuth = await server.inject({
-        method: 'POST',
-        url: '/authentications',
-        payload: {
-          username: 'dicoding',
-          password: 'secret',
-        },
-      });
-      const responseAuth = JSON.parse(requestAuth.payload);
+      const addCommentBPayload = {
+        content: 'comment akan dihapus',
+      };
 
-      const thread = await server.inject({
+      /** add thread */
+      const addedThread = await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         url: '/threads',
-        payload: {
-          title: 'sebuah thread',
-          body: 'sebuah body thread',
-        },
+        payload: addThreadPayload,
       });
-      const addedThreadId = JSON.parse(thread.payload).data.addedThread.id;
-      const { addedThread } = JSON.parse(thread.payload).data.addedThread;
+      const { data: { addedThread: { id: addedThreadId } } } = JSON.parse(addedThread.payload);
+      const threadId = addedThreadId;
 
+      /** add first comment on added thread */
       await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
-        url: `/threads/${addedThreadId}/comments`,
-        payload: { content: 'sebuah comment' },
+        url: `/threads/${threadId}/comments`,
+        payload: addCommentAPayload,
       });
 
-      const commentId = await server.inject({
+      /** add second comment on added thread */
+      const commentBResponse = await server.inject({
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
-        url: `/threads/${addedThreadId}/comments`,
-        payload: { content: 'comment yang dihapus' },
+        url: `/threads/${threadId}/comments`,
+        payload: addCommentBPayload,
       });
-      const commentIdJson = JSON.parse(commentId.payload).data.addedComment.id;
-      console.log(commentIdJson);
+      const { data: { addedComment: { id: commentBResponseId } } } = JSON
+        .parse(commentBResponse.payload);
+      const commentId = commentBResponseId;
 
-      const deletedComment = await server.inject({
+      /** delete second comment on added thread */
+      await server.inject({
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+          Authorization: `Bearer ${accessToken}`,
         },
-        url: `/threads/${addedThreadId}/comments/${commentIdJson}`,
+        url: `/threads/${threadId}/comments/${commentId}`,
       });
-      console.log(JSON.parse(deletedComment.payload));
-      console.log(addedThread);
 
       // action
       const response = await server.inject({
         method: 'GET',
-        url: `/threads/${addedThreadId}`,
+        url: `/threads/${threadId}`,
       });
 
       // assert
-      const responseJson = JSON.parse(response.payload);
-      console.log(responseJson);
-
       expect(response.statusCode).toEqual(200);
+
+      const responseJson = JSON.parse(response.payload);
       expect(responseJson.status).toEqual('success');
       expect(responseJson.data.thread).toBeDefined();
-      console.log(responseJson.data.thread);
-
       expect(responseJson.data.thread.id).toBeDefined();
+      expect(responseJson.data.thread.comments).toHaveLength(2);
       expect(responseJson.data.thread.comments[0]).toBeDefined();
       expect(responseJson.data.thread.comments[1]).toBeDefined();
-
-      const threadsDetails = await ThreadsTableTestHelper.findThreadById(addedThreadId);
-      console.log(threadsDetails);
-
-      expect(responseJson.data.thread.comments).toHaveLength(2);
       expect(responseJson.data.thread.comments[0].content).toEqual('sebuah comment');
       expect(responseJson.data.thread.comments[1].content).toEqual('**komentar telah dihapus**');
     });

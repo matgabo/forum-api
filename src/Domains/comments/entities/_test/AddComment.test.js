@@ -70,11 +70,12 @@ describe('an AddComment entities', () => {
     };
 
     // action
-    const { owner, threadId, content } = new AddComment(expectedOwner, expectedThreadId, payload);
+    const addComment = new AddComment(expectedOwner, expectedThreadId, payload);
 
     // assert
-    expect(owner).toEqual(expectedOwner);
-    expect(threadId).toEqual(expectedThreadId);
-    expect(content).toEqual(payload.content);
+    expect(addComment).toBeInstanceOf(AddComment);
+    expect(addComment.owner).toEqual(expectedOwner);
+    expect(addComment.threadId).toEqual(expectedThreadId);
+    expect(addComment.content).toEqual(payload.content);
   });
 });

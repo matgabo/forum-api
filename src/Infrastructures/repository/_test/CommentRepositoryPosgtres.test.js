@@ -1,10 +1,13 @@
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
 const CommentsTableTestHelper = require('../../../../tests/CommentsTestTableTestHelper');
+
 const AddComment = require('../../../Domains/comments/entities/AddComment');
 const AddedComment = require('../../../Domains/comments/entities/AddedComment');
+
 const pool = require('../../database/postgres/pool');
 const CommentRepositoryPostgres = require('../CommentRepositoryPostgres');
+
 const AuthorizationError = require('../../../Commons/exceptions/AuthorizationError');
 const NotFoundError = require('../../../Commons/exceptions/NotFoundError');
 
@@ -44,7 +47,7 @@ describe('CommentRepositoryPostgres', () => {
       expect(comments).toHaveLength(1);
     });
 
-    it('should return addComment correctly', async () => {
+    it('should return added comment correctly', async () => {
       // arrange
       const owner = 'user-123';
       const threadId = 'thread-123';
@@ -59,10 +62,11 @@ describe('CommentRepositoryPostgres', () => {
       const addedComment = await commentRepositoryPostgres.addComment(addComment);
 
       // assert
-      expect(addedComment).toBeInstanceOf(AddedComment);
-      expect(addedComment.id).toEqual('comment-123');
-      expect(addedComment.content).toEqual('sebuah comment');
-      expect(addedComment.owner).toEqual('user-123');
+      expect(addedComment).toStrictEqual(new AddedComment({
+        id: 'comment-123',
+        content: 'sebuah comment',
+        owner: 'user-123',
+      }));
     });
   });
 

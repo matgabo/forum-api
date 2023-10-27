@@ -40,9 +40,11 @@ describe('AddThreadUseCase', () => {
       owner: useCaseOwner,
     }));
 
-    expect(mockThreadRepository.addThread).toBeCalledWith(new AddThread(useCaseOwner, {
-      title: useCasePayload.title,
-      body: useCasePayload.body,
-    }));
+    expect(mockThreadRepository.addThread).toBeCalledWith(
+      new AddThread(
+        useCaseOwner,
+        useCasePayload,
+      ),
+    );
   });
 });

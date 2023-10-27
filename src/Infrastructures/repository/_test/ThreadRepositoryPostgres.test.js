@@ -1,9 +1,13 @@
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
+
 const AddThread = require('../../../Domains/threads/entities/AddThread');
 const AddedThread = require('../../../Domains/threads/entities/AddedThread');
+
 const pool = require('../../database/postgres/pool');
+
 const ThreadRepositoryPostgres = require('../ThreadRepositoryPostgres');
+
 const NotFoundError = require('../../../Commons/exceptions/NotFoundError');
 
 describe('ThreadRepositoryPostgres', () => {
@@ -55,10 +59,11 @@ describe('ThreadRepositoryPostgres', () => {
       const addedThread = await threadRepositoryPostgres.addThread(addThread);
 
       // assert
-      expect(addedThread).toBeInstanceOf(AddedThread);
-      expect(addedThread.id).toEqual('thread-123');
-      expect(addedThread.title).toEqual('sebuah thread');
-      expect(addedThread.owner).toEqual('user-123');
+      expect(addedThread).toStrictEqual(new AddedThread({
+        id: 'thread-123',
+        title: 'sebuah thread',
+        owner: 'user-123',
+      }));
     });
   });
 
