@@ -8,21 +8,21 @@ describe('GetThreadDetailsUseCase', () => {
     // arrange
     const useCaseThreadId = 'thread-123';
 
-    const expectedCommentDetails = ({
-      id: 'comment-123',
-      username: 'dicoding',
-      date: new Date().toISOString(),
-      content: '**komentar telah dihapus**',
-    });
-
-    const expectedThreadDetails = new ThreadDetails({
+    const expectedThreadDetails = {
       id: 'thread-123',
       title: 'sebuah thread',
       body: 'sebuah body thread',
-      date: new Date().toISOString(),
+      date: '2023-10-25T15:58:20.407Z',
       username: 'dicoding',
-      comments: [expectedCommentDetails],
-    });
+      comments: [
+        {
+          id: 'comment-123',
+          username: 'dicoding',
+          date: '2023-10-25T15:58:20.407Z',
+          content: 'sebuah komentar',
+        },
+      ],
+    };
 
     /** dependency */
     const mockThreadRepository = new ThreadRepository();
@@ -32,23 +32,30 @@ describe('GetThreadDetailsUseCase', () => {
     mockThreadRepository.verifyAvailableThread = jest.fn()
       .mockImplementation(() => Promise.resolve());
     mockCommentRepository.getThreadCommentById = jest.fn()
-      .mockImplementation(() => Promise.resolve([
-        {
-          id: 'comment-123',
-          username: 'dicoding',
-          date: new Date().toISOString(),
-          content: 'komentar akan dihapus',
-          is_delete: true,
-        },
-      ]));
+      .mockImplementation(() => Promise.resolve([{
+        id: 'comment-123',
+        username: 'dicoding',
+        date: '2023-10-25T15:58:20.407Z',
+        content: 'sebuah komentar',
+        is_delete: false,
+      }]));
 
     mockThreadRepository.getDetailsThreadById = jest.fn()
       .mockImplementation(() => Promise.resolve({
-        id: 'thread-123',
+        id: useCaseThreadId,
         title: 'sebuah thread',
         body: 'sebuah body thread',
-        date: new Date().toISOString(),
+        date: '2023-10-25T15:58:20.407Z',
         username: 'dicoding',
+        comments: [
+          {
+            id: 'comment-123',
+            username: 'dicoding',
+            date: '2023-10-25T15:58:20.407Z',
+            content: 'sebuah komentar',
+            is_delete: false,
+          },
+        ],
       }));
 
     /** instance */
@@ -61,9 +68,6 @@ describe('GetThreadDetailsUseCase', () => {
     const threadDetails = await getThreadDetailsUseCase.execute(useCaseThreadId);
 
     // assert
-    console.log(threadDetails);
-    console.log(expectedThreadDetails);
-
     expect(threadDetails).toStrictEqual(expectedThreadDetails);
 
     expect(mockThreadRepository.verifyAvailableThread).toBeCalledWith(useCaseThreadId);

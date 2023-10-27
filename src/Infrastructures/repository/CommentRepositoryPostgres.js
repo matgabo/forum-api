@@ -13,10 +13,11 @@ class CommentRepositoryPostgres extends CommentRepository {
   async addComment(comment) {
     const { owner, threadId, content } = comment;
     const id = `comment-${this._idGenerator()}`;
+    const date = new Date().toISOString();
 
     const query = {
-      text: 'INSERT INTO comments VALUES($1, $2, $3, $4) RETURNING id, content, owner',
-      values: [id, content, owner, threadId],
+      text: 'INSERT INTO comments VALUES($1, $2, $3, $4, $5) RETURNING id, content, owner',
+      values: [id, content, owner, threadId, date],
     };
 
     const result = await this._pool.query(query);
@@ -57,6 +58,21 @@ class CommentRepositoryPostgres extends CommentRepository {
     };
 
     await this._pool.query(query);
+  }
+
+  async getThreadCommentById(threadId) {
+    const query = {
+      text: `SELECT comments.id, users.username, comments.date, comments.content, comments.is_delete
+      FROM comments
+      INNER JOIN users ON comments.owner = users.id
+      WHERE comments.thread_id = $1
+      ORDER BY comments.date ASC`,
+      values: [threadId],
+    };
+
+    const result = await this._pool.query(query);
+
+    return result.rows;
   }
 }
 

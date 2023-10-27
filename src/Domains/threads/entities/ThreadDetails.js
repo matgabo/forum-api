@@ -8,7 +8,6 @@ class ThreadDetails {
       body,
       date,
       username,
-      comments,
     } = payload;
 
     this.id = id;
@@ -16,7 +15,6 @@ class ThreadDetails {
     this.body = body;
     this.date = date;
     this.username = username;
-    this.comments = comments;
   }
 
   _verifyPayload({
@@ -25,9 +23,8 @@ class ThreadDetails {
     body,
     date,
     username,
-    comments,
   }) {
-    if (!id || !title || !body || !date || !username || !comments) {
+    if (!id || !title || !body || !date || !username) {
       throw new Error('THREAD_DETAILS.NOT_CONTAIN_NEEDED_PROPERTY');
     }
 
@@ -36,7 +33,6 @@ class ThreadDetails {
       || typeof body !== 'string'
       || typeof date !== 'string'
       || typeof username !== 'string'
-      || !Array.isArray(comments)
     ) {
       throw new Error('THREAD_DETAILS.NOT_MEET_DATA_TYPE_SPECIFICATION');
     }

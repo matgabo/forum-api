@@ -183,4 +183,164 @@ describe('/threads endpoint', () => {
       expect(responseJson.message).toEqual('tidak dapat membuat thread baru karena tipe data tidak sesuai');
     });
   });
+
+  describe('when GET /threads/{threadId}', () => {
+    it('should response 200 and persisted thread', async () => {
+      // arrange
+      const server = await createServer(container);
+
+      await server.inject({
+        method: 'POST',
+        url: '/users',
+        payload: {
+          username: 'dicoding',
+          password: 'secret',
+          fullname: 'Dicoding Indonesia',
+        },
+      });
+
+      const requestAuth = await server.inject({
+        method: 'POST',
+        url: '/authentications',
+        payload: {
+          username: 'dicoding',
+          password: 'secret',
+        },
+      });
+      const responseAuth = JSON.parse(requestAuth.payload);
+
+      const thread = await server.inject({
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+        },
+        url: '/threads',
+        payload: {
+          title: 'sebuah thread',
+          body: 'sebuah body thread',
+        },
+      });
+      const threadId = JSON.parse(thread.payload).data.addedThread.id;
+
+      await server.inject({
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+        },
+        url: `/threads/${threadId}/comments`,
+        payload: { content: 'sebuah comment' },
+      });
+
+      // masalahnya, kembalian comment masih berupa object
+
+      // action
+      const response = await server.inject({
+        method: 'GET',
+        url: `/threads/${threadId}`,
+      });
+
+      // assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(200);
+      expect(responseJson.status).toEqual('success');
+      expect(responseJson.data.thread).toBeDefined();
+      expect(responseJson.data.thread.id).toBeDefined();
+      expect(responseJson.data.thread.comments[0]).toBeDefined();
+    });
+
+    it('should response 200 and return deleted comment correctly', async () => {
+      // arrange
+      const server = await createServer(container);
+
+      await server.inject({
+        method: 'POST',
+        url: '/users',
+        payload: {
+          username: 'dicoding',
+          password: 'secret',
+          fullname: 'Dicoding Indonesia',
+        },
+      });
+
+      const requestAuth = await server.inject({
+        method: 'POST',
+        url: '/authentications',
+        payload: {
+          username: 'dicoding',
+          password: 'secret',
+        },
+      });
+      const responseAuth = JSON.parse(requestAuth.payload);
+
+      const thread = await server.inject({
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+        },
+        url: '/threads',
+        payload: {
+          title: 'sebuah thread',
+          body: 'sebuah body thread',
+        },
+      });
+      const addedThreadId = JSON.parse(thread.payload).data.addedThread.id;
+      const { addedThread } = JSON.parse(thread.payload).data.addedThread;
+
+      await server.inject({
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+        },
+        url: `/threads/${addedThreadId}/comments`,
+        payload: { content: 'sebuah comment' },
+      });
+
+      const commentId = await server.inject({
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+        },
+        url: `/threads/${addedThreadId}/comments`,
+        payload: { content: 'comment yang dihapus' },
+      });
+      const commentIdJson = JSON.parse(commentId.payload).data.addedComment.id;
+      console.log(commentIdJson);
+
+      const deletedComment = await server.inject({
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${responseAuth.data.accessToken}`,
+        },
+        url: `/threads/${addedThreadId}/comments/${commentIdJson}`,
+      });
+      console.log(JSON.parse(deletedComment.payload));
+      console.log(addedThread);
+
+      // action
+      const response = await server.inject({
+        method: 'GET',
+        url: `/threads/${addedThreadId}`,
+      });
+
+      // assert
+      const responseJson = JSON.parse(response.payload);
+      console.log(responseJson);
+
+      expect(response.statusCode).toEqual(200);
+      expect(responseJson.status).toEqual('success');
+      expect(responseJson.data.thread).toBeDefined();
+      console.log(responseJson.data.thread);
+
+      expect(responseJson.data.thread.id).toBeDefined();
+      expect(responseJson.data.thread.comments[0]).toBeDefined();
+      expect(responseJson.data.thread.comments[1]).toBeDefined();
+
+      const threadsDetails = await ThreadsTableTestHelper.findThreadById(addedThreadId);
+      console.log(threadsDetails);
+
+      expect(responseJson.data.thread.comments).toHaveLength(2);
+      expect(responseJson.data.thread.comments[0].content).toEqual('sebuah comment');
+      expect(responseJson.data.thread.comments[1].content).toEqual('**komentar telah dihapus**');
+    });
+  });
 });

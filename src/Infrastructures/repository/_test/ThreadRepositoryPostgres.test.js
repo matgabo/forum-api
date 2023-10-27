@@ -92,4 +92,24 @@ describe('ThreadRepositoryPostgres', () => {
         .resolves.not.toThrowError();
     });
   });
+
+  describe('getDetailsThreadById funtion', () => {
+    it('should return thread details correctly', async () => {
+      // arrange
+      await ThreadsTableTestHelper.addThread({});
+      const threadId = 'thread-123';
+
+      const threadRepositoryPostgres = new ThreadRepositoryPostgres(pool, {});
+
+      // action
+      const threadDetails = await threadRepositoryPostgres.getDetailsThreadById(threadId);
+
+      // assert
+      expect(threadDetails).toHaveProperty('id', 'thread-123');
+      expect(threadDetails).toHaveProperty('title', 'sebuah thread');
+      expect(threadDetails).toHaveProperty('body', 'sebuah body thread');
+      expect(threadDetails).toHaveProperty('date');
+      expect(threadDetails).toHaveProperty('username', 'dicoding');
+    });
+  });
 });

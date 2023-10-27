@@ -21,7 +21,6 @@ exports.up = (pgm) => {
     date: {
       type: 'TIMESTAMP',
       notNull: true,
-      default: new Date().toISOString(),
     },
     is_delete: {
       type: 'BOOLEAN',
