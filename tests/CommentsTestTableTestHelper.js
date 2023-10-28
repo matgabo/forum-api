@@ -13,10 +13,10 @@ const CommentsTableTestHelper = {
     await pool.query(query);
   },
 
-  async findCommentById(id) {
+  async findCommentById(commentId) {
     const query = {
       text: 'SELECT * FROM comments WHERE id = $1',
-      values: [id],
+      values: [commentId],
     };
 
     const result = await pool.query(query);

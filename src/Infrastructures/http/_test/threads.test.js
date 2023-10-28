@@ -11,6 +11,7 @@ const createServer = require('../createServer');
 describe('/threads endpoint', () => {
   let accessToken;
   let server;
+  let threadId;
 
   beforeEach(async () => {
     const addUserPayload = {
@@ -22,6 +23,11 @@ describe('/threads endpoint', () => {
     const userLoginPayload = {
       username: 'dicoding',
       password: 'secret',
+    };
+
+    const addThreadPayload = {
+      title: 'sebuah thread',
+      body: 'sebuah body thread',
     };
 
     server = await createServer(container);
@@ -39,9 +45,20 @@ describe('/threads endpoint', () => {
       url: '/authentications',
       payload: userLoginPayload,
     });
-
     const { data: { accessToken: token } } = JSON.parse(responseLogin.payload);
     accessToken = token;
+
+    /** add thread */
+    const addedThread = await server.inject({
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      url: '/threads',
+      payload: addThreadPayload,
+    });
+    const { data: { addedThread: { id: addedThreadId } } } = JSON.parse(addedThread.payload);
+    threadId = addedThreadId;
   });
 
   afterEach(async () => {
@@ -76,8 +93,8 @@ describe('/threads endpoint', () => {
       // assert
       const responseJson = JSON.parse(response.payload);
       expect(response.statusCode).toEqual(201);
-      expect(responseJson.status).toEqual('success');
 
+      expect(responseJson.status).toEqual('success');
       expect(responseJson.data.addedThread).toBeDefined();
       expect(responseJson.data.addedThread.id).toBeDefined();
       expect(responseJson.data.addedThread.title).toBeDefined();
@@ -157,26 +174,9 @@ describe('/threads endpoint', () => {
   describe('when GET /threads/{threadId}', () => {
     it('should response 200 and persisted thread', async () => {
       // arrange
-      const addThreadPayload = {
-        title: 'sebuah thread',
-        body: 'sebuah body thread',
-      };
-
       const addCommentPayload = {
         content: 'sebuah comment',
       };
-
-      /** create thread */
-      const addedThread = await server.inject({
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        url: '/threads',
-        payload: addThreadPayload,
-      });
-      const { data: { addedThread: { id: addedThreadId } } } = JSON.parse(addedThread.payload);
-      const threadId = addedThreadId;
 
       /** create comment on added thread */
       await server.inject({
@@ -212,11 +212,6 @@ describe('/threads endpoint', () => {
 
     it('should response 200 and return deleted comment correctly', async () => {
       // arrange
-      const addThreadPayload = {
-        title: 'sebuah thread',
-        body: 'sebuah body thread',
-      };
-
       const addCommentAPayload = {
         content: 'sebuah comment',
       };
@@ -224,18 +219,6 @@ describe('/threads endpoint', () => {
       const addCommentBPayload = {
         content: 'comment akan dihapus',
       };
-
-      /** add thread */
-      const addedThread = await server.inject({
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        url: '/threads',
-        payload: addThreadPayload,
-      });
-      const { data: { addedThread: { id: addedThreadId } } } = JSON.parse(addedThread.payload);
-      const threadId = addedThreadId;
 
       /** add first comment on added thread */
       await server.inject({
@@ -276,9 +259,10 @@ describe('/threads endpoint', () => {
       });
 
       // assert
+      const responseJson = JSON.parse(response.payload);
+      console.log(responseJson.data.thread.comments);
       expect(response.statusCode).toEqual(200);
 
-      const responseJson = JSON.parse(response.payload);
       expect(responseJson.status).toEqual('success');
       expect(responseJson.data.thread).toBeDefined();
       expect(responseJson.data.thread.id).toBeDefined();
@@ -287,6 +271,25 @@ describe('/threads endpoint', () => {
       expect(responseJson.data.thread.comments[1]).toBeDefined();
       expect(responseJson.data.thread.comments[0].content).toEqual('sebuah comment');
       expect(responseJson.data.thread.comments[1].content).toEqual('**komentar telah dihapus**');
+      /** belum ada statement untuk validasi komentar sudah diurutkan berdasarkan tanggal */
+    });
+
+    it('should response 404 not found error when thread is not found', async () => {
+      // arrange
+      const notFoundThreadId = 'thread-missing';
+
+      // action
+      const response = await server.inject({
+        method: 'GET',
+        url: `/threads/${notFoundThreadId}`,
+      });
+
+      // assert
+      const responseJson = JSON.parse(response.payload);
+      expect(response.statusCode).toEqual(404);
+
+      expect(responseJson.status).toEqual('fail');
+      expect(responseJson.message).toEqual('Thread tidak ditemukan!');
     });
   });
 });

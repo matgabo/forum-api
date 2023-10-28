@@ -148,14 +148,18 @@ describe('CommentRepositoryPostgres', () => {
   });
 
   describe('getThreadCommentById function', () => {
-    it('should return thread comment correctly', async () => {
+    it('should return comment correctly', async () => {
       // arrange
+      const owner = 'user-123';
       const threadId = 'thread-123';
+      const addComment = new AddComment(owner, threadId, {
+        content: 'sebuah comment',
+      });
       const commentId = 'comment-123';
 
       const fakeIdGenerator = () => '123'; // stub
       const commentRepositoryPostgres = new CommentRepositoryPostgres(pool, fakeIdGenerator);
-      await CommentsTableTestHelper.addComment({ id: commentId });
+      await commentRepositoryPostgres.addComment(addComment);
 
       // action
       await commentRepositoryPostgres.getThreadCommentById(threadId);
@@ -166,6 +170,29 @@ describe('CommentRepositoryPostgres', () => {
       expect(comments).toHaveLength(1);
       expect(comments[0].id).toEqual(commentId);
       expect(comments[0].is_delete).toEqual(false);
+    });
+
+    it('should return deleted comment correctly', async () => {
+      // arrange
+      const owner = 'user-123';
+      const threadId = 'thread-123';
+      const addComment = new AddComment(owner, threadId, {
+        content: 'sebuah comment',
+      });
+      const commentId = 'comment-123';
+
+      const fakeIdGenerator = () => '123'; // stub
+      const commentRepositoryPostgres = new CommentRepositoryPostgres(pool, fakeIdGenerator);
+      await commentRepositoryPostgres.addComment(addComment);
+      await commentRepositoryPostgres.deleteCommentById(commentId);
+
+      // action
+      const commentDetails = await commentRepositoryPostgres.getThreadCommentById(threadId);
+
+      // assert
+      expect(commentDetails).toHaveLength(1);
+      expect(commentDetails[0].id).toEqual(commentId);
+      expect(commentDetails[0].is_delete).toEqual(true);
     });
   });
 });
