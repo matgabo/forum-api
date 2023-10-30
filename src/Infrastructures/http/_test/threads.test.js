@@ -260,7 +260,6 @@ describe('/threads endpoint', () => {
 
       // assert
       const responseJson = JSON.parse(response.payload);
-      console.log(responseJson.data.thread.comments);
       expect(response.statusCode).toEqual(200);
 
       expect(responseJson.status).toEqual('success');
@@ -271,7 +270,6 @@ describe('/threads endpoint', () => {
       expect(responseJson.data.thread.comments[1]).toBeDefined();
       expect(responseJson.data.thread.comments[0].content).toEqual('sebuah comment');
       expect(responseJson.data.thread.comments[1].content).toEqual('**komentar telah dihapus**');
-      /** belum ada statement untuk validasi komentar sudah diurutkan berdasarkan tanggal */
     });
 
     it('should response 404 not found error when thread is not found', async () => {

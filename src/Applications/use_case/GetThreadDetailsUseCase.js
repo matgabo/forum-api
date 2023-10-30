@@ -1,3 +1,5 @@
+/* eslint no-param-reassign: "off" */
+
 class GetThreadDetailsUseCase {
   constructor({ threadRepository, commentRepository }) {
     this._threadRepository = threadRepository;
