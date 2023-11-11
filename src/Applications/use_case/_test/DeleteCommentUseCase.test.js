@@ -14,17 +14,10 @@ describe('DeleteCommentUseCase', () => {
     const mockCommentRepository = new CommentRepository();
 
     /** mocking */
-    mockThreadRepository.verifyAvailableThread = jest.fn()
-      .mockImplementation(() => Promise.resolve());
-
-    mockCommentRepository.verifyCommentById = jest.fn()
-      .mockImplementation(() => Promise.resolve());
-
-    mockCommentRepository.verifyCommentOwner = jest.fn()
-      .mockImplementation(() => Promise.resolve());
-
-    mockCommentRepository.deleteCommentById = jest.fn()
-      .mockImplementation(() => Promise.resolve());
+    mockThreadRepository.verifyAvailableThread = jest.fn((() => Promise.resolve()));
+    mockCommentRepository.verifyCommentById = jest.fn((() => Promise.resolve()));
+    mockCommentRepository.verifyCommentOwner = jest.fn((() => Promise.resolve()));
+    mockCommentRepository.deleteCommentById = jest.fn((() => Promise.resolve()));
 
     /** instance */
     const deleteCommentUseCase = new DeleteCommentUseCase({

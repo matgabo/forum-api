@@ -1,7 +1,6 @@
 const ThreadRepository = require('../../../Domains/threads/ThreadRepository');
 const CommentRepository = require('../../../Domains/comments/CommentRepository');
 const GetThreadDetailsUseCase = require('../GetThreadDetailsUseCase');
-const ThreadDetails = require('../../../Domains/threads/entities/ThreadDetails');
 
 describe('GetThreadDetailsUseCase', () => {
   it('should orchestrating the get thread details action correctly', async () => {
@@ -29,34 +28,31 @@ describe('GetThreadDetailsUseCase', () => {
     const mockCommentRepository = new CommentRepository();
 
     /** mocking */
-    mockThreadRepository.verifyAvailableThread = jest.fn()
-      .mockImplementation(() => Promise.resolve());
-    mockCommentRepository.getThreadCommentById = jest.fn()
-      .mockImplementation(() => Promise.resolve([{
-        id: 'comment-123',
-        username: 'dicoding',
-        date: '2023-10-25T15:58:20.407Z',
-        content: 'sebuah komentar',
-        is_delete: false,
-      }]));
+    mockThreadRepository.verifyAvailableThread = jest.fn((() => Promise.resolve()));
+    mockCommentRepository.getThreadCommentById = jest.fn((() => Promise.resolve([{
+      id: 'comment-123',
+      username: 'dicoding',
+      date: '2023-10-25T15:58:20.407Z',
+      content: 'sebuah komentar',
+      is_delete: false,
+    }])));
 
-    mockThreadRepository.getDetailsThreadById = jest.fn()
-      .mockImplementation(() => Promise.resolve({
-        id: useCaseThreadId,
-        title: 'sebuah thread',
-        body: 'sebuah body thread',
-        date: '2023-10-25T15:58:20.407Z',
-        username: 'dicoding',
-        comments: [
-          {
-            id: 'comment-123',
-            username: 'dicoding',
-            date: '2023-10-25T15:58:20.407Z',
-            content: 'sebuah komentar',
-            is_delete: false,
-          },
-        ],
-      }));
+    mockThreadRepository.getDetailsThreadById = jest.fn((() => Promise.resolve({
+      id: useCaseThreadId,
+      title: 'sebuah thread',
+      body: 'sebuah body thread',
+      date: '2023-10-25T15:58:20.407Z',
+      username: 'dicoding',
+      comments: [
+        {
+          id: 'comment-123',
+          username: 'dicoding',
+          date: '2023-10-25T15:58:20.407Z',
+          content: 'sebuah komentar',
+          is_delete: false,
+        },
+      ],
+    })));
 
     /** instance */
     const getThreadDetailsUseCase = new GetThreadDetailsUseCase({
